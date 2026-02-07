@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:3001/v1';
+const API_BASE = process.env.API_URL || 'http://localhost:3001/v1';
 
 async function request<T>(
   endpoint: string,
