@@ -31,6 +31,9 @@ export class UsersController {
     const user = this.usersService.update(req.user.sub, allowed);
     if (!user) throw new NotFoundException('Usuário não encontrado');
     const { passwordHash: _, ...rest } = user;
+    
+    const teste = 0;
+    
     return rest;
   }
 
