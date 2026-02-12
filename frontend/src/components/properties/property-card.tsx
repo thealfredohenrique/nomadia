@@ -1,8 +1,7 @@
-'use client';
-
 import Image from 'next/image';
 import Link from 'next/link';
 import { Property } from '@/lib/types';
+import { PROPERTY_TYPE_LABELS } from '@/lib/property-utils';
 import { Badge } from '@/components/ui/badge';
 import { Star, MapPin } from 'lucide-react';
 
@@ -11,14 +10,6 @@ interface PropertyCardProps {
 }
 
 export function PropertyCard({ property }: PropertyCardProps) {
-  const typeLabels: Record<string, string> = {
-    apartment: 'Apartamento',
-    house: 'Casa',
-    villa: 'Villa',
-    room: 'Quarto',
-    studio: 'Studio',
-  };
-
   return (
     <Link href={`/properties/${property.id}`} className="group block">
       <div className="rounded-xl overflow-hidden">
@@ -56,7 +47,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
             {property.title}
           </h3>
           <p className="text-sm text-gray-500 mt-0.5">
-            {typeLabels[property.propertyType] || property.propertyType} ·{' '}
+            {PROPERTY_TYPE_LABELS[property.propertyType] || property.propertyType} ·{' '}
             {property.maxGuests} hóspedes · {property.bedrooms} quartos
           </p>
           <p className="mt-2">

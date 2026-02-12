@@ -1,18 +1,33 @@
 import {
   Injectable,
+  Inject,
+  Logger,
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
 import { Booking, PaginatedResponse } from '../common/types';
 import { PropertiesService } from '../properties/properties.service';
-import { MOCK_BOOKINGS } from '../common/mock-data';
+import {
+  IBookingRepository,
+  BOOKING_REPOSITORY,
+} from '../common/interfaces/booking.repository';
+import { PricingService } from './pricing.service';
+import { BookingValidator } from './booking.validator';
+import { paginate } from '../common/paginate';
+import { DEFAULT_PAGE_LIMIT } from '../common/constants';
 import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class BookingsService {
-  private bookings: Booking[] = [...MOCK_BOOKINGS];
+  private readonly logger = new Logger(BookingsService.name);
 
-  constructor(private readonly propertiesService: PropertiesService) {}
+  constructor(
+    private readonly propertiesService: PropertiesService,
+    @Inject(BOOKING_REPOSITORY)
+    private readonly bookingRepo: IBookingRepository,
+    private readonly pricingService: PricingService,
+    private readonly bookingValidator: BookingValidator,
+  ) {}
 
   create(
     guestId: string,
@@ -28,33 +43,13 @@ export class BookingsService {
       throw new NotFoundException('Propriedade não encontrada');
     }
 
-    if (dto.guests > property.maxGuests) {
-      throw new BadRequestException(
-        `Número máximo de hóspedes: ${property.maxGuests}`,
-      );
-    }
-
-    const checkIn = new Date(dto.checkIn);
-    const checkOut = new Date(dto.checkOut);
-    const totalNights = Math.ceil(
-      (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24),
+    const pricing = this.pricingService.calculateBookingPrice(
+      property,
+      dto.checkIn,
+      dto.checkOut,
     );
 
-    if (totalNights < property.minimumNights) {
-      throw new BadRequestException(
-        `Estadia mínima: ${property.minimumNights} noites`,
-      );
-    }
-
-    if (totalNights > property.maximumNights) {
-      throw new BadRequestException(
-        `Estadia máxima: ${property.maximumNights} noites`,
-      );
-    }
-
-    const subtotal = property.pricePerNight * totalNights;
-    const serviceFee = Math.round(subtotal * 0.1);
-    const totalPrice = subtotal + property.cleaningFee + serviceFee;
+    this.bookingValidator.validate(property, dto, pricing.nights);
 
     const booking: Booking = {
       id: uuidv4(),
@@ -64,11 +59,11 @@ export class BookingsService {
       checkIn: dto.checkIn,
       checkOut: dto.checkOut,
       guests: dto.guests,
-      totalNights,
+      totalNights: pricing.nights,
       pricePerNight: property.pricePerNight,
-      cleaningFee: property.cleaningFee,
-      serviceFee,
-      totalPrice,
+      cleaningFee: pricing.cleaningFee,
+      serviceFee: pricing.serviceFee,
+      totalPrice: pricing.total,
       currency: property.currency,
       status: property.instantBooking ? 'confirmed' : 'pending',
       propertyTitle: property.title,
@@ -77,17 +72,18 @@ export class BookingsService {
       updatedAt: new Date().toISOString(),
     };
 
-    this.bookings.push(booking);
-    return booking;
+    const created = this.bookingRepo.create(booking);
+    this.logger.log(
+      `Booking created: ${created.id} for property ${dto.propertyId}`,
+    );
+    return created;
   }
 
   findByUser(
     userId: string,
     filters: { status?: string; page?: number; limit?: number },
   ): PaginatedResponse<Booking> {
-    let results = this.bookings.filter(
-      (b) => b.guestId === userId || b.hostId === userId,
-    );
+    let results = this.bookingRepo.findByUser(userId);
 
     if (filters.status) {
       results = results.filter((b) => b.status === filters.status);
@@ -99,26 +95,18 @@ export class BookingsService {
     );
 
     const page = filters.page || 1;
-    const limit = filters.limit || 20;
-    const total = results.length;
-    const totalPages = Math.ceil(total / limit);
-    const start = (page - 1) * limit;
-    const paged = results.slice(start, start + limit);
-
-    return {
-      data: paged,
-      pagination: { page, limit, total, totalPages },
-    };
+    const limit = filters.limit || DEFAULT_PAGE_LIMIT;
+    return paginate(results, page, limit);
   }
 
   findById(id: string): Booking | undefined {
-    return this.bookings.find((b) => b.id === id);
+    return this.bookingRepo.findById(id);
   }
 
   cancel(id: string, userId: string): Booking {
-    const booking = this.bookings.find(
-      (b) => b.id === id && (b.guestId === userId || b.hostId === userId),
-    );
+    const booking = this.bookingRepo
+      .findByUser(userId)
+      .find((b) => b.id === id);
 
     if (!booking) {
       throw new NotFoundException('Reserva não encontrada');
@@ -134,8 +122,12 @@ export class BookingsService {
       );
     }
 
-    booking.status = 'cancelled';
-    booking.updatedAt = new Date().toISOString();
-    return booking;
+    const updated = this.bookingRepo.update(id, {
+      status: 'cancelled',
+      updatedAt: new Date().toISOString(),
+    });
+
+    this.logger.log(`Booking cancelled: ${id}`);
+    return updated!;
   }
 }

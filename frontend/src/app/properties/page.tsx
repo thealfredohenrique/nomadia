@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
-import { Property, PaginatedResponse } from '@/lib/types';
+import { Property } from '@/lib/types';
+import { useDebounce } from '@/hooks/use-debounce';
 import { PropertyCard } from '@/components/properties/property-card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,23 +37,27 @@ function PropertiesContent() {
     sortBy: searchParams.get('sortBy') || '',
   });
 
+  const debouncedCity = useDebounce(filters.city, 300);
+
+  const debouncedFilters = { ...filters, city: debouncedCity };
+
   useEffect(() => {
     setLoading(true);
     const params: Record<string, string> = {};
-    Object.entries(filters).forEach(([k, v]) => {
+    Object.entries(debouncedFilters).forEach(([k, v]) => {
       if (v) params[k] = v;
     });
 
     api.properties
       .list(params)
       .then((res) => {
-        const data = res as PaginatedResponse<Property>;
-        setProperties(data.data);
-        setTotal(data.pagination.total);
+        setProperties(res.data);
+        setTotal(res.pagination.total);
       })
-      .catch(console.error)
+      .catch(() => {})
       .finally(() => setLoading(false));
-  }, [filters]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedCity, filters.propertyType, filters.minPrice, filters.maxPrice, filters.guests, filters.bedrooms, filters.sortBy]);
 
   const updateFilter = (key: string, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }));

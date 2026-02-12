@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { BookingsController } from './bookings.controller';
 import { BookingsService } from './bookings.service';
 
@@ -44,7 +44,7 @@ describe('BookingsController', () => {
 
   describe('create', () => {
     it('should call service with guestId from request', () => {
-      const req = { user: { sub: 'guest-1' } };
+      const user = { sub: 'guest-1', email: 'g@test.com', role: 'guest' };
       const body = {
         propertyId: 'p1',
         checkIn: '2026-03-01',
@@ -52,15 +52,15 @@ describe('BookingsController', () => {
         guests: 2,
       };
 
-      controller.create(req, body);
+      controller.create(user, body);
       expect(bookingsService.create).toHaveBeenCalledWith('guest-1', body);
     });
   });
 
   describe('findAll', () => {
     it('should call service with userId and parsed filters', () => {
-      const req = { user: { sub: 'guest-1' } };
-      controller.findAll(req, 'confirmed', '2', '5');
+      const user = { sub: 'guest-1', email: 'g@test.com', role: 'guest' };
+      controller.findAll(user, 'confirmed', '2', '5');
 
       expect(bookingsService.findByUser).toHaveBeenCalledWith('guest-1', {
         status: 'confirmed',
@@ -70,8 +70,8 @@ describe('BookingsController', () => {
     });
 
     it('should use default pagination when not provided', () => {
-      const req = { user: { sub: 'guest-1' } };
-      controller.findAll(req);
+      const user = { sub: 'guest-1', email: 'g@test.com', role: 'guest' };
+      controller.findAll(user);
 
       expect(bookingsService.findByUser).toHaveBeenCalledWith('guest-1', {
         status: undefined,
@@ -82,26 +82,37 @@ describe('BookingsController', () => {
   });
 
   describe('findOne', () => {
-    it('should return booking by id', () => {
-      const req = { user: { sub: 'guest-1' } };
-      const result = controller.findOne('b1', req);
+    it('should return booking by id for guest', () => {
+      const user = { sub: 'guest-1', email: 'g@test.com', role: 'guest' };
+      const result = controller.findOne('b1', user);
+      expect(result).toEqual(mockBooking);
+    });
+
+    it('should return booking by id for host', () => {
+      const user = { sub: 'host-1', email: 'h@test.com', role: 'host' };
+      const result = controller.findOne('b1', user);
       expect(result).toEqual(mockBooking);
     });
 
     it('should throw NotFoundException for non-existent booking', () => {
       (bookingsService.findById as jest.Mock).mockReturnValue(undefined);
 
-      const req = { user: { sub: 'guest-1' } };
-      expect(() => controller.findOne('bad-id', req)).toThrow(
+      const user = { sub: 'guest-1', email: 'g@test.com', role: 'guest' };
+      expect(() => controller.findOne('bad-id', user)).toThrow(
         NotFoundException,
       );
+    });
+
+    it('should throw ForbiddenException for unauthorized user', () => {
+      const user = { sub: 'other-user', email: 'o@test.com', role: 'guest' };
+      expect(() => controller.findOne('b1', user)).toThrow(ForbiddenException);
     });
   });
 
   describe('cancel', () => {
     it('should call service.cancel with booking id and userId', () => {
-      const req = { user: { sub: 'guest-1' } };
-      const result = controller.cancel('b1', req);
+      const user = { sub: 'guest-1', email: 'g@test.com', role: 'guest' };
+      const result = controller.cancel('b1', user);
 
       expect(bookingsService.cancel).toHaveBeenCalledWith('b1', 'guest-1');
       expect(result).toHaveProperty('status', 'cancelled');

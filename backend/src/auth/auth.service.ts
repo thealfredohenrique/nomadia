@@ -1,19 +1,24 @@
 import {
   Injectable,
+  Logger,
   UnauthorizedException,
   ConflictException,
+  NotFoundException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
-import { User, JwtPayload } from '../common/types';
+import { User } from '../common/types';
+import { TokenService } from './token.service';
+import { toPublicUser } from '../common/sanitize';
+import { BCRYPT_ROUNDS } from '../common/constants';
 import { v4 as uuidv4 } from 'uuid';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class AuthService {
-  private refreshTokens: Map<string, string> = new Map();
+  private readonly logger = new Logger(AuthService.name);
 
   constructor(
-    private readonly jwtService: JwtService,
+    private readonly tokenService: TokenService,
     private readonly usersService: UsersService,
   ) {}
 
@@ -34,7 +39,7 @@ export class AuthService {
     const user: User = {
       id: uuidv4(),
       email: dto.email,
-      passwordHash: `$2b$12$mock.${dto.password}`,
+      passwordHash: bcrypt.hashSync(dto.password, BCRYPT_ROUNDS),
       firstName: dto.firstName,
       lastName: dto.lastName,
       phone: dto.phone,
@@ -52,10 +57,11 @@ export class AuthService {
     };
 
     this.usersService.create(user);
+    this.logger.log(`User registered: ${user.email}`);
 
-    const tokens = this.generateTokens(user);
+    const tokens = this.tokenService.generateTokens(user);
     return {
-      user: this.sanitizeUser(user),
+      user: toPublicUser(user),
       ...tokens,
     };
   }
@@ -63,11 +69,12 @@ export class AuthService {
   async login(email: string, password: string) {
     const user = this.usersService.findByEmail(email);
     if (!user) {
+      this.logger.warn(`Login failed: ${email}`);
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
-    // Mock password check
-    if (user.passwordHash !== `$2b$12$mock.${password}`) {
+    if (!bcrypt.compareSync(password, user.passwordHash)) {
+      this.logger.warn(`Login failed: ${email}`);
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
@@ -75,53 +82,38 @@ export class AuthService {
       throw new UnauthorizedException('Conta suspensa ou banida');
     }
 
-    const tokens = this.generateTokens(user);
+    this.logger.log(`Login successful: ${email}`);
+    const tokens = this.tokenService.generateTokens(user);
     return {
-      user: this.sanitizeUser(user),
+      user: toPublicUser(user),
       ...tokens,
     };
   }
 
   async refresh(refreshToken: string) {
-    const userId = this.refreshTokens.get(refreshToken);
-    if (!userId) {
+    const entry = this.tokenService.validateRefreshToken(refreshToken);
+    if (!entry) {
+      this.logger.warn('Invalid refresh token attempt');
       throw new UnauthorizedException('Refresh token inválido');
     }
 
-    const user = this.usersService.findById(userId);
+    const user = this.usersService.findById(entry.userId);
     if (!user) {
       throw new UnauthorizedException('Usuário não encontrado');
     }
 
-    this.refreshTokens.delete(refreshToken);
-    const tokens = this.generateTokens(user);
+    this.tokenService.revokeRefreshToken(refreshToken);
+    const tokens = this.tokenService.generateTokens(user);
     return tokens;
   }
 
   async logout(refreshToken: string) {
-    this.refreshTokens.delete(refreshToken);
+    this.tokenService.revokeRefreshToken(refreshToken);
   }
 
-  private generateTokens(user: User) {
-    const payload: JwtPayload = {
-      sub: user.id,
-      email: user.email,
-      role: user.role,
-    };
-
-    const accessToken = this.jwtService.sign(payload);
-    const refreshToken = uuidv4();
-    this.refreshTokens.set(refreshToken, user.id);
-
-    return {
-      accessToken,
-      refreshToken,
-      expiresIn: 900,
-    };
-  }
-
-  private sanitizeUser(user: User) {
-    const { passwordHash, ...rest } = user;
-    return rest;
+  getCurrentUser(userId: string) {
+    const user = this.usersService.findById(userId);
+    if (!user) throw new NotFoundException('Usuário não encontrado');
+    return toPublicUser(user);
   }
 }

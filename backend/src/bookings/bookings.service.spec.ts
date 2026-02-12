@@ -2,6 +2,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { BookingsService } from './bookings.service';
 import { PropertiesService } from '../properties/properties.service';
+import { PricingService } from './pricing.service';
+import { BookingValidator } from './booking.validator';
+import { BOOKING_REPOSITORY } from '../common/interfaces/booking.repository';
+import { InMemoryBookingRepository } from './repositories/in-memory-booking.repository';
 
 describe('BookingsService', () => {
   let service: BookingsService;
@@ -25,6 +29,9 @@ describe('BookingsService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         BookingsService,
+        PricingService,
+        BookingValidator,
+        { provide: BOOKING_REPOSITORY, useClass: InMemoryBookingRepository },
         {
           provide: PropertiesService,
           useValue: {

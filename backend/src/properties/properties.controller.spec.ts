@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { PropertiesController } from './properties.controller';
 import { PropertiesService } from './properties.service';
+import { PricingService } from '../bookings/pricing.service';
 
 describe('PropertiesController', () => {
   let controller: PropertiesController;
@@ -30,6 +31,18 @@ describe('PropertiesController', () => {
             findById: jest.fn().mockReturnValue(mockProperty),
             create: jest.fn().mockReturnValue(mockProperty),
             update: jest.fn().mockReturnValue(mockProperty),
+          },
+        },
+        {
+          provide: PricingService,
+          useValue: {
+            calculateBookingPrice: jest.fn().mockReturnValue({
+              nights: 3,
+              subtotal: 600,
+              cleaningFee: 50,
+              serviceFee: 60,
+              total: 710,
+            }),
           },
         },
       ],
@@ -92,9 +105,9 @@ describe('PropertiesController', () => {
 
   describe('create', () => {
     it('should call service with hostId from request', () => {
-      const req = { user: { sub: 'host-1' } };
+      const user = { sub: 'host-1', email: 'h@test.com', role: 'host' };
       const body = { title: 'New Property' };
-      controller.create(req, body);
+      controller.create(user, body as any);
 
       expect(propertiesService.create).toHaveBeenCalledWith('host-1', body);
     });
@@ -102,9 +115,9 @@ describe('PropertiesController', () => {
 
   describe('update', () => {
     it('should call service with id, hostId from request, and body', () => {
-      const req = { user: { sub: 'host-1' } };
+      const user = { sub: 'host-1', email: 'h@test.com', role: 'host' };
       const body = { title: 'Updated' };
-      controller.update('p1', req, body);
+      controller.update('p1', user, body);
 
       expect(propertiesService.update).toHaveBeenCalledWith(
         'p1',

@@ -4,61 +4,52 @@ import {
   Body,
   Get,
   UseGuards,
-  Request,
   HttpCode,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
-import { UsersService } from '../users/users.service';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { JwtPayload } from '../common/types';
+import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
+import { RefreshDto } from './dto/refresh.dto';
 
 @Controller('v1/auth')
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService,
-    private readonly usersService: UsersService,
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Post('register')
-  async register(
-    @Body()
-    body: {
-      email: string;
-      password: string;
-      firstName: string;
-      lastName: string;
-      phone?: string;
-      dateOfBirth?: string;
-      role?: 'guest' | 'host';
-    },
-  ) {
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  async register(@Body() body: RegisterDto) {
     return this.authService.register(body);
   }
 
   @Post('login')
   @HttpCode(200)
-  async login(@Body() body: { email: string; password: string }) {
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  async login(@Body() body: LoginDto) {
     return this.authService.login(body.email, body.password);
   }
 
   @Post('refresh')
   @HttpCode(200)
-  async refresh(@Body() body: { refreshToken: string }) {
+  async refresh(@Body() body: RefreshDto) {
     return this.authService.refresh(body.refreshToken);
   }
 
   @Post('logout')
   @HttpCode(204)
   @UseGuards(AuthGuard('jwt'))
-  async logout(@Body() body: { refreshToken: string }) {
+  async logout(@Body() body: RefreshDto) {
     return this.authService.logout(body.refreshToken);
   }
 
   @Get('me')
   @UseGuards(AuthGuard('jwt'))
-  async me(@Request() req: any) {
-    const user = this.usersService.findById(req.user.sub);
-    if (!user) return null;
-    const { passwordHash, ...rest } = user;
-    return rest;
+  async me(@CurrentUser() user: JwtPayload) {
+    return this.authService.getCurrentUser(user.sub);
   }
 }

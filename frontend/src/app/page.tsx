@@ -3,11 +3,17 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
-import { Property, PaginatedResponse } from '@/lib/types';
+import { Property } from '@/lib/types';
 import { PropertyCard } from '@/components/properties/property-card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, MapPin, Building2, Home as HomeIcon, Bed } from 'lucide-react';
+
+const categories = [
+  { icon: Building2, label: 'Apartamentos', type: 'apartment' },
+  { icon: HomeIcon, label: 'Casas', type: 'house' },
+  { icon: Bed, label: 'Quartos', type: 'room' },
+];
 
 export default function HomePage() {
   const [featured, setFeatured] = useState<Property[]>([]);
@@ -19,8 +25,7 @@ export default function HomePage() {
     api.properties
       .list({ sortBy: 'rating', limit: '8' })
       .then((res) => {
-        const data = res as PaginatedResponse<Property>;
-        setFeatured(data.data);
+        setFeatured(res.data);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -32,12 +37,6 @@ export default function HomePage() {
     if (searchCity) params.set('city', searchCity);
     router.push(`/properties?${params.toString()}`);
   };
-
-  const categories = [
-    { icon: Building2, label: 'Apartamentos', type: 'apartment' },
-    { icon: HomeIcon, label: 'Casas', type: 'house' },
-    { icon: Bed, label: 'Quartos', type: 'room' },
-  ];
 
   return (
     <div>

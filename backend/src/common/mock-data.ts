@@ -1,10 +1,13 @@
+import { hashSync } from 'bcryptjs';
 import { User, Property, Booking } from './types';
+
+const BCRYPT_COST = 4;
 
 export const MOCK_USERS: User[] = [
   {
     id: 'u1-host-ana',
     email: 'ana@example.com',
-    passwordHash: '$2b$12$mock.mock.ana',
+    passwordHash: hashSync('mock.ana', BCRYPT_COST),
     firstName: 'Ana',
     lastName: 'Costa',
     phone: '+5521999990001',
@@ -27,7 +30,7 @@ export const MOCK_USERS: User[] = [
   {
     id: 'u2-host-carlos',
     email: 'carlos@example.com',
-    passwordHash: '$2b$12$mock.mock.carlos',
+    passwordHash: hashSync('mock.carlos', BCRYPT_COST),
     firstName: 'Carlos',
     lastName: 'Mendes',
     phone: '+5511999990002',
@@ -50,7 +53,7 @@ export const MOCK_USERS: User[] = [
   {
     id: 'u3-guest-maria',
     email: 'maria@example.com',
-    passwordHash: '$2b$12$mock.mock.maria',
+    passwordHash: hashSync('mock.maria', BCRYPT_COST),
     firstName: 'Maria',
     lastName: 'Santos',
     phone: '+5531999990003',
@@ -73,7 +76,7 @@ export const MOCK_USERS: User[] = [
   {
     id: 'u4-guest-pedro',
     email: 'pedro@example.com',
-    passwordHash: '$2b$12$mock.mock.pedro',
+    passwordHash: hashSync('mock.pedro', BCRYPT_COST),
     firstName: 'Pedro',
     lastName: 'Oliveira',
     phone: '+5548999990004',
@@ -95,7 +98,7 @@ export const MOCK_USERS: User[] = [
   {
     id: 'u5-admin',
     email: 'admin@nomadia.com',
-    passwordHash: '$2b$12$mock.mock.admin',
+    passwordHash: hashSync('mock.admin', BCRYPT_COST),
     firstName: 'Admin',
     lastName: 'Nomadia',
     language: 'pt-BR',

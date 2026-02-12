@@ -1,13 +1,18 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from './users.service';
 import { User } from '../common/types';
+import { USER_REPOSITORY } from '../common/interfaces/user.repository';
+import { InMemoryUserRepository } from './repositories/in-memory-user.repository';
 
 describe('UsersService', () => {
   let service: UsersService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [UsersService],
+      providers: [
+        UsersService,
+        { provide: USER_REPOSITORY, useClass: InMemoryUserRepository },
+      ],
     }).compile();
 
     service = module.get<UsersService>(UsersService);

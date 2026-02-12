@@ -2,7 +2,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { TokenService } from './token.service';
 import { UsersService } from '../users/users.service';
+import { hashSync } from 'bcryptjs';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -13,6 +15,7 @@ describe('AuthService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
+        TokenService,
         {
           provide: UsersService,
           useValue: {
@@ -85,7 +88,7 @@ describe('AuthService', () => {
     const mockUser = {
       id: 'user-1',
       email: 'test@example.com',
-      passwordHash: '$2b$12$mock.correctpass',
+      passwordHash: hashSync('correctpass', 4),
       firstName: 'Test',
       lastName: 'User',
       role: 'guest',
@@ -122,7 +125,7 @@ describe('AuthService', () => {
     it('should throw UnauthorizedException for suspended account', async () => {
       (usersService.findByEmail as jest.Mock).mockReturnValue({
         ...mockUser,
-        passwordHash: '$2b$12$mock.correctpass',
+        passwordHash: hashSync('correctpass', 4),
         accountStatus: 'suspended',
       });
 

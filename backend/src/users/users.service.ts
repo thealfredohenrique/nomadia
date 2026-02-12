@@ -1,37 +1,34 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { User } from '../common/types';
-import { MOCK_USERS } from '../common/mock-data';
+import {
+  IUserRepository,
+  USER_REPOSITORY,
+} from '../common/interfaces/user.repository';
 
 @Injectable()
 export class UsersService {
-  private users: User[] = [...MOCK_USERS];
+  constructor(
+    @Inject(USER_REPOSITORY) private readonly userRepo: IUserRepository,
+  ) {}
 
   findAll(): User[] {
-    return this.users;
+    return this.userRepo.findAll();
   }
 
   findById(id: string): User | undefined {
-    return this.users.find((u) => u.id === id);
+    return this.userRepo.findById(id);
   }
 
   findByEmail(email: string): User | undefined {
-    return this.users.find((u) => u.email === email);
+    return this.userRepo.findByEmail(email);
   }
 
   create(user: User): User {
-    this.users.push(user);
-    return user;
+    return this.userRepo.create(user);
   }
 
   update(id: string, data: Partial<User>): User | undefined {
-    const index = this.users.findIndex((u) => u.id === id);
-    if (index === -1) return undefined;
-    this.users[index] = {
-      ...this.users[index],
-      ...data,
-      updatedAt: new Date().toISOString(),
-    };
-    return this.users[index];
+    return this.userRepo.update(id, data);
   }
 
   getPublicProfile(user: User) {

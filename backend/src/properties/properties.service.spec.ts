@@ -1,13 +1,18 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { PropertiesService } from './properties.service';
+import { PROPERTY_REPOSITORY } from '../common/interfaces/property.repository';
+import { InMemoryPropertyRepository } from './repositories/in-memory-property.repository';
 
 describe('PropertiesService', () => {
   let service: PropertiesService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [PropertiesService],
+      providers: [
+        PropertiesService,
+        { provide: PROPERTY_REPOSITORY, useClass: InMemoryPropertyRepository },
+      ],
     }).compile();
 
     service = module.get<PropertiesService>(PropertiesService);

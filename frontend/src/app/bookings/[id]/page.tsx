@@ -7,17 +7,28 @@ import Link from 'next/link';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { Booking } from '@/lib/types';
+import { BOOKING_STATUS_CONFIG } from '@/lib/property-utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { CalendarDays, Users, CheckCircle, XCircle, Clock, ArrowLeft } from 'lucide-react';
 
-const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: typeof CheckCircle }> = {
-  pending: { label: 'Pendente', variant: 'secondary', icon: Clock },
-  confirmed: { label: 'Confirmada', variant: 'default', icon: CheckCircle },
-  cancelled: { label: 'Cancelada', variant: 'destructive', icon: XCircle },
-  completed: { label: 'Concluída', variant: 'outline', icon: CheckCircle },
+const statusIconMap: Record<string, typeof CheckCircle> = {
+  pending: Clock,
+  confirmed: CheckCircle,
+  cancelled: XCircle,
+  completed: CheckCircle,
 };
 
 export default function BookingDetailPage({
@@ -29,6 +40,8 @@ export default function BookingDetailPage({
   const [booking, setBooking] = useState<Booking | null>(null);
   const [loading, setLoading] = useState(true);
   const [cancelLoading, setCancelLoading] = useState(false);
+  const [cancelError, setCancelError] = useState('');
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
 
@@ -39,19 +52,21 @@ export default function BookingDetailPage({
     }
     api.bookings
       .get(id)
-      .then((res) => setBooking(res as Booking))
-      .catch(console.error)
+      .then((res) => setBooking(res))
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, [id, user, router]);
 
   const handleCancel = async () => {
-    if (!booking || !confirm('Tem certeza que deseja cancelar esta reserva?')) return;
+    if (!booking) return;
     setCancelLoading(true);
+    setCancelError('');
     try {
-      const res = (await api.bookings.cancel(booking.id)) as Booking;
+      const res = await api.bookings.cancel(booking.id);
       setBooking(res);
+      setShowCancelDialog(false);
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Erro ao cancelar');
+      setCancelError(err instanceof Error ? err.message : 'Erro ao cancelar');
     } finally {
       setCancelLoading(false);
     }
@@ -79,8 +94,8 @@ export default function BookingDetailPage({
     );
   }
 
-  const status = statusConfig[booking.status] || statusConfig.pending;
-  const StatusIcon = status.icon;
+  const status = BOOKING_STATUS_CONFIG[booking.status] || BOOKING_STATUS_CONFIG.pending;
+  const StatusIcon = statusIconMap[booking.status] || Clock;
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
@@ -193,14 +208,34 @@ export default function BookingDetailPage({
           {(booking.status === 'pending' || booking.status === 'confirmed') && (
             <>
               <Separator />
+              {cancelError && <p className="text-sm text-red-500 text-center">{cancelError}</p>}
               <Button
                 variant="destructive"
                 className="w-full"
-                onClick={handleCancel}
+                onClick={() => setShowCancelDialog(true)}
                 disabled={cancelLoading}
               >
                 {cancelLoading ? 'Cancelando...' : 'Cancelar Reserva'}
               </Button>
+              <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Cancelar reserva</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Tem certeza que deseja cancelar esta reserva? Esta ação não pode ser desfeita.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Voltar</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleCancel}
+                      className="bg-red-500 hover:bg-red-600"
+                    >
+                      {cancelLoading ? 'Cancelando...' : 'Confirmar cancelamento'}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </>
           )}
 

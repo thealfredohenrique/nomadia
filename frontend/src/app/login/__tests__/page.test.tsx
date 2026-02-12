@@ -33,10 +33,10 @@ describe('LoginPage', () => {
     expect(screen.getByRole('button', { name: 'Entrar' })).toBeInTheDocument();
   });
 
-  it('should have pre-filled credentials', () => {
+  it('should have empty credentials by default', () => {
     render(<LoginPage />);
-    expect(screen.getByLabelText('Email')).toHaveValue('maria@example.com');
-    expect(screen.getByLabelText('Senha')).toHaveValue('mock.maria');
+    expect(screen.getByLabelText('Email')).toHaveValue('');
+    expect(screen.getByLabelText('Senha')).toHaveValue('');
   });
 
   it('should show test accounts info', () => {
@@ -48,6 +48,8 @@ describe('LoginPage', () => {
     mockLogin.mockResolvedValue(undefined);
     render(<LoginPage />);
 
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'maria@example.com' } });
+    fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'mock.maria' } });
     fireEvent.click(screen.getByRole('button', { name: 'Entrar' }));
 
     await waitFor(() => {
@@ -60,6 +62,8 @@ describe('LoginPage', () => {
     mockLogin.mockRejectedValue(new Error('Credenciais inválidas'));
     render(<LoginPage />);
 
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'test@example.com' } });
+    fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'wrongpass' } });
     fireEvent.click(screen.getByRole('button', { name: 'Entrar' }));
 
     await waitFor(() => {

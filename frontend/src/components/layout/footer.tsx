@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Home } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
@@ -18,19 +19,19 @@ export function Footer() {
           <div>
             <h3 className="font-semibold mb-3 text-sm">Descubra</h3>
             <ul className="space-y-2 text-sm text-gray-500">
-              <li>Apartamentos</li>
-              <li>Casas</li>
-              <li>Chalés e Cabanas</li>
-              <li>Quartos</li>
+              <li><Link href="/properties?propertyType=apartment" className="hover:text-rose-500 transition-colors">Apartamentos</Link></li>
+              <li><Link href="/properties?propertyType=house" className="hover:text-rose-500 transition-colors">Casas</Link></li>
+              <li><Link href="/properties?propertyType=villa" className="hover:text-rose-500 transition-colors">Chalés e Cabanas</Link></li>
+              <li><Link href="/properties?propertyType=room" className="hover:text-rose-500 transition-colors">Quartos</Link></li>
             </ul>
           </div>
           <div>
             <h3 className="font-semibold mb-3 text-sm">Destinos Populares</h3>
             <ul className="space-y-2 text-sm text-gray-500">
-              <li>Rio de Janeiro</li>
-              <li>São Paulo</li>
-              <li>Florianópolis</li>
-              <li>Gramado</li>
+              <li><Link href="/properties?city=Rio+de+Janeiro" className="hover:text-rose-500 transition-colors">Rio de Janeiro</Link></li>
+              <li><Link href="/properties?city=São+Paulo" className="hover:text-rose-500 transition-colors">São Paulo</Link></li>
+              <li><Link href="/properties?city=Florianópolis" className="hover:text-rose-500 transition-colors">Florianópolis</Link></li>
+              <li><Link href="/properties?city=Gramado" className="hover:text-rose-500 transition-colors">Gramado</Link></li>
             </ul>
           </div>
         </div>

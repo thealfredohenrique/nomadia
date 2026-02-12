@@ -5,11 +5,14 @@ import {
   Param,
   Body,
   UseGuards,
-  Request,
   NotFoundException,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { UsersService } from './users.service';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { JwtPayload } from '../common/types';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { toPublicUser } from '../common/sanitize';
 
 @Controller('v1/users')
 export class UsersController {
@@ -17,21 +20,18 @@ export class UsersController {
 
   @Get('me')
   @UseGuards(AuthGuard('jwt'))
-  getMe(@Request() req: any) {
-    const user = this.usersService.findById(req.user.sub);
-    if (!user) throw new NotFoundException('Usuário não encontrado');
-    const { passwordHash, ...rest } = user;
-    return rest;
+  getMe(@CurrentUser() user: JwtPayload) {
+    const found = this.usersService.findById(user.sub);
+    if (!found) throw new NotFoundException('Usuário não encontrado');
+    return toPublicUser(found);
   }
 
   @Patch('me')
   @UseGuards(AuthGuard('jwt'))
-  updateMe(@Request() req: any, @Body() body: any) {
-    const { passwordHash, email, role, id, ...allowed } = body;
-    const user = this.usersService.update(req.user.sub, allowed);
-    if (!user) throw new NotFoundException('Usuário não encontrado');
-    const { passwordHash: _, ...rest } = user;
-    return rest;
+  updateMe(@CurrentUser() user: JwtPayload, @Body() body: UpdateUserDto) {
+    const updated = this.usersService.update(user.sub, body);
+    if (!updated) throw new NotFoundException('Usuário não encontrado');
+    return toPublicUser(updated);
   }
 
   @Get(':id')

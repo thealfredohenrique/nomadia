@@ -39,8 +39,8 @@ describe('UsersController', () => {
     it('should return user without passwordHash', () => {
       (usersService.findById as jest.Mock).mockReturnValue(mockUser);
 
-      const req = { user: { sub: 'user-1' } };
-      const result = controller.getMe(req);
+      const user = { sub: 'user-1', email: 'test@example.com', role: 'guest' };
+      const result = controller.getMe(user);
 
       expect(result).not.toHaveProperty('passwordHash');
       expect(result).toHaveProperty('email', 'test@example.com');
@@ -49,37 +49,37 @@ describe('UsersController', () => {
     it('should throw NotFoundException if user not found', () => {
       (usersService.findById as jest.Mock).mockReturnValue(undefined);
 
-      const req = { user: { sub: 'non-existent' } };
-      expect(() => controller.getMe(req)).toThrow(NotFoundException);
+      const user = {
+        sub: 'non-existent',
+        email: 'test@example.com',
+        role: 'guest',
+      };
+      expect(() => controller.getMe(user)).toThrow(NotFoundException);
     });
   });
 
   describe('updateMe', () => {
-    it('should update user and strip protected fields from body', () => {
+    it('should update user and pass body to service', () => {
       const updatedUser = { ...mockUser, firstName: 'Updated' };
       (usersService.update as jest.Mock).mockReturnValue(updatedUser);
 
-      const req = { user: { sub: 'user-1' } };
-      const body = {
-        firstName: 'Updated',
-        email: 'hack@evil.com',
-        role: 'admin',
-        id: 'hacked',
-        passwordHash: 'hacked',
-      };
-      const result = controller.updateMe(req, body);
+      const user = { sub: 'user-1', email: 'test@example.com', role: 'guest' };
+      const body = { firstName: 'Updated' };
+      const result = controller.updateMe(user, body);
 
-      expect(usersService.update).toHaveBeenCalledWith('user-1', {
-        firstName: 'Updated',
-      });
+      expect(usersService.update).toHaveBeenCalledWith('user-1', body);
       expect(result).not.toHaveProperty('passwordHash');
     });
 
     it('should throw NotFoundException if user not found', () => {
       (usersService.update as jest.Mock).mockReturnValue(undefined);
 
-      const req = { user: { sub: 'non-existent' } };
-      expect(() => controller.updateMe(req, { firstName: 'Test' })).toThrow(
+      const user = {
+        sub: 'non-existent',
+        email: 'test@example.com',
+        role: 'guest',
+      };
+      expect(() => controller.updateMe(user, { firstName: 'Test' })).toThrow(
         NotFoundException,
       );
     });

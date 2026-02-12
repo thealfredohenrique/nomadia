@@ -7,7 +7,7 @@ import {
   useEffect,
   ReactNode,
 } from 'react';
-import { User, AuthResponse } from './types';
+import { User } from './types';
 import { api } from './api';
 
 interface AuthContextType {
@@ -35,7 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (token) {
       api.auth
         .me()
-        .then((u) => setUser(u as User))
+        .then((u) => setUser(u))
         .catch(() => {
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
@@ -47,7 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const res = (await api.auth.login(email, password)) as AuthResponse;
+    const res = await api.auth.login(email, password);
     localStorage.setItem('accessToken', res.accessToken);
     localStorage.setItem('refreshToken', res.refreshToken);
     setUser(res.user);
@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     lastName: string;
     role?: string;
   }) => {
-    const res = (await api.auth.register(data)) as AuthResponse;
+    const res = await api.auth.register(data);
     localStorage.setItem('accessToken', res.accessToken);
     localStorage.setItem('refreshToken', res.refreshToken);
     setUser(res.user);

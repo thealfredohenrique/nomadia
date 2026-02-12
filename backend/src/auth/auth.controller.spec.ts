@@ -1,12 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { NotFoundException } from '@nestjs/common';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { UsersService } from '../users/users.service';
 
 describe('AuthController', () => {
   let controller: AuthController;
   let authService: AuthService;
-  let usersService: UsersService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -19,20 +19,17 @@ describe('AuthController', () => {
             login: jest.fn(),
             refresh: jest.fn(),
             logout: jest.fn(),
-          },
-        },
-        {
-          provide: UsersService,
-          useValue: {
-            findById: jest.fn(),
+            getCurrentUser: jest.fn(),
           },
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(ThrottlerGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<AuthController>(AuthController);
     authService = module.get<AuthService>(AuthService);
-    usersService = module.get<UsersService>(UsersService);
   });
 
   describe('register', () => {
@@ -102,27 +99,38 @@ describe('AuthController', () => {
 
   describe('me', () => {
     it('should return user profile without passwordHash', async () => {
-      const user = {
+      const userProfile = {
         id: 'user-1',
         email: 'test@example.com',
-        passwordHash: 'secret',
         firstName: 'Test',
       };
-      (usersService.findById as jest.Mock).mockReturnValue(user);
+      (authService.getCurrentUser as jest.Mock).mockReturnValue(userProfile);
 
-      const req = { user: { sub: 'user-1' } };
-      const result = await controller.me(req);
+      const jwtPayload = {
+        sub: 'user-1',
+        email: 'test@example.com',
+        role: 'guest',
+      };
+      const result = await controller.me(jwtPayload);
 
+      expect(authService.getCurrentUser).toHaveBeenCalledWith('user-1');
       expect(result).not.toHaveProperty('passwordHash');
       expect(result).toHaveProperty('email', 'test@example.com');
     });
 
-    it('should return null if user not found', async () => {
-      (usersService.findById as jest.Mock).mockReturnValue(undefined);
+    it('should throw NotFoundException if user not found', async () => {
+      (authService.getCurrentUser as jest.Mock).mockImplementation(() => {
+        throw new NotFoundException('Usuário não encontrado');
+      });
 
-      const req = { user: { sub: 'non-existent' } };
-      const result = await controller.me(req);
-      expect(result).toBeNull();
+      const jwtPayload = {
+        sub: 'non-existent',
+        email: 'test@example.com',
+        role: 'guest',
+      };
+      await expect(controller.me(jwtPayload)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

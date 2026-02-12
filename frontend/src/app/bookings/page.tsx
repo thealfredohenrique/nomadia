@@ -6,18 +6,12 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import { Booking, PaginatedResponse } from '@/lib/types';
+import { Booking } from '@/lib/types';
+import { BOOKING_STATUS_CONFIG } from '@/lib/property-utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { CalendarDays, MapPin } from 'lucide-react';
-
-const statusLabels: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-  pending: { label: 'Pendente', variant: 'secondary' },
-  confirmed: { label: 'Confirmada', variant: 'default' },
-  cancelled: { label: 'Cancelada', variant: 'destructive' },
-  completed: { label: 'Concluída', variant: 'outline' },
-};
 
 export default function BookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -34,10 +28,9 @@ export default function BookingsPage() {
     api.bookings
       .list()
       .then((res) => {
-        const data = res as PaginatedResponse<Booking>;
-        setBookings(data.data);
+        setBookings(res.data);
       })
-      .catch(console.error)
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, [user, router]);
 
@@ -70,7 +63,7 @@ export default function BookingsPage() {
       ) : (
         <div className="space-y-4">
           {bookings.map((booking) => {
-            const status = statusLabels[booking.status] || statusLabels.pending;
+            const status = BOOKING_STATUS_CONFIG[booking.status] || BOOKING_STATUS_CONFIG.pending;
             return (
               <Link key={booking.id} href={`/bookings/${booking.id}`}>
                 <Card className="hover:shadow-md transition-shadow cursor-pointer">

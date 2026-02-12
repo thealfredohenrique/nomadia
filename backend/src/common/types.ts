@@ -119,3 +119,6 @@ export interface JwtPayload {
   email: string;
   role: string;
 }
+
+export type UserPublic = Omit<User, 'passwordHash'>;
+export type PropertySummary = Omit<Property, 'reviews'>;

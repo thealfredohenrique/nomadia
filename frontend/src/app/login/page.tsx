@@ -10,8 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('maria@example.com');
-  const [password, setPassword] = useState('mock.maria');
+  const [email, setEmail] = useState(process.env.NEXT_PUBLIC_DEFAULT_EMAIL || '');
+  const [password, setPassword] = useState(process.env.NEXT_PUBLIC_DEFAULT_PASSWORD || '');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
