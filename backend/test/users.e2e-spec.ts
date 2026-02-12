@@ -42,9 +42,7 @@ describe('Users (e2e)', () => {
     });
 
     it('should return 401 without auth', () => {
-      return request(app.getHttpServer())
-        .get('/v1/users/me')
-        .expect(401);
+      return request(app.getHttpServer()).get('/v1/users/me').expect(401);
     });
   });
 

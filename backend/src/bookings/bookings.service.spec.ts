@@ -85,9 +85,9 @@ describe('BookingsService', () => {
     });
 
     it('should throw BadRequestException when guests exceed max', () => {
-      expect(() =>
-        service.create('guest-1', { ...dto, guests: 10 }),
-      ).toThrow(BadRequestException);
+      expect(() => service.create('guest-1', { ...dto, guests: 10 })).toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw BadRequestException when stay is below minimum nights', () => {
@@ -106,8 +106,8 @@ describe('BookingsService', () => {
         maximumNights: 3,
       });
 
-      expect(() =>
-        service.create('guest-1', dto), // 4 nights > max 3
+      expect(
+        () => service.create('guest-1', dto), // 4 nights > max 3
       ).toThrow(BadRequestException);
     });
 
@@ -182,9 +182,7 @@ describe('BookingsService', () => {
       for (let i = 1; i < result.data.length; i++) {
         expect(
           new Date(result.data[i].createdAt).getTime(),
-        ).toBeLessThanOrEqual(
-          new Date(result.data[i - 1].createdAt).getTime(),
-        );
+        ).toBeLessThanOrEqual(new Date(result.data[i - 1].createdAt).getTime());
       }
     });
   });

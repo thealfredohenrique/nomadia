@@ -25,8 +25,9 @@ describe('Bookings (e2e)', () => {
     guestToken = loginRes.body.accessToken;
 
     // Get a property ID for booking
-    const propsRes = await request(app.getHttpServer())
-      .get('/v1/properties?limit=1');
+    const propsRes = await request(app.getHttpServer()).get(
+      '/v1/properties?limit=1',
+    );
 
     propertyId = propsRes.body.data[0].id;
   });
@@ -122,9 +123,7 @@ describe('Bookings (e2e)', () => {
     });
 
     it('should return 401 without auth', () => {
-      return request(app.getHttpServer())
-        .get('/v1/bookings')
-        .expect(401);
+      return request(app.getHttpServer()).get('/v1/bookings').expect(401);
     });
   });
 

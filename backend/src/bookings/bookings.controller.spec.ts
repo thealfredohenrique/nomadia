@@ -30,7 +30,9 @@ describe('BookingsController', () => {
             create: jest.fn().mockReturnValue(mockBooking),
             findByUser: jest.fn().mockReturnValue(mockPaginatedResult),
             findById: jest.fn().mockReturnValue(mockBooking),
-            cancel: jest.fn().mockReturnValue({ ...mockBooking, status: 'cancelled' }),
+            cancel: jest
+              .fn()
+              .mockReturnValue({ ...mockBooking, status: 'cancelled' }),
           },
         },
       ],

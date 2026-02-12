@@ -62,7 +62,10 @@ describe('AuthService', () => {
     });
 
     it('should throw ConflictException if email already exists', async () => {
-      (usersService.findByEmail as jest.Mock).mockReturnValue({ id: '1', email: dto.email });
+      (usersService.findByEmail as jest.Mock).mockReturnValue({
+        id: '1',
+        email: dto.email,
+      });
 
       await expect(service.register(dto)).rejects.toThrow(ConflictException);
     });
@@ -111,9 +114,9 @@ describe('AuthService', () => {
     it('should throw UnauthorizedException for wrong password', async () => {
       (usersService.findByEmail as jest.Mock).mockReturnValue(mockUser);
 
-      await expect(service.login('test@example.com', 'wrongpass')).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(
+        service.login('test@example.com', 'wrongpass'),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should throw UnauthorizedException for suspended account', async () => {
@@ -123,15 +126,19 @@ describe('AuthService', () => {
         accountStatus: 'suspended',
       });
 
-      await expect(service.login('test@example.com', 'correctpass')).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(
+        service.login('test@example.com', 'correctpass'),
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 
   describe('refresh', () => {
     it('should refresh tokens with valid refresh token', async () => {
-      const mockUser = { id: 'user-1', email: 'test@example.com', role: 'guest' };
+      const mockUser = {
+        id: 'user-1',
+        email: 'test@example.com',
+        role: 'guest',
+      };
       (usersService.findByEmail as jest.Mock).mockReturnValue(undefined);
       (usersService.create as jest.Mock).mockImplementation((u) => u);
 
@@ -178,9 +185,9 @@ describe('AuthService', () => {
       await service.logout(registerResult.refreshToken);
 
       // Trying to use the revoked refresh token should fail
-      await expect(service.refresh(registerResult.refreshToken)).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(
+        service.refresh(registerResult.refreshToken),
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 });

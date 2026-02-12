@@ -129,7 +129,9 @@ export class BookingsService {
     }
 
     if (booking.status === 'completed') {
-      throw new BadRequestException('Não é possível cancelar reserva concluída');
+      throw new BadRequestException(
+        'Não é possível cancelar reserva concluída',
+      );
     }
 
     booking.status = 'cancelled';

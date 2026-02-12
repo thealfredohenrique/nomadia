@@ -40,9 +40,7 @@ export class PropertiesService {
     }
 
     if (filters.propertyType) {
-      results = results.filter(
-        (p) => p.propertyType === filters.propertyType,
-      );
+      results = results.filter((p) => p.propertyType === filters.propertyType);
     }
 
     if (filters.roomType) {
@@ -50,15 +48,11 @@ export class PropertiesService {
     }
 
     if (filters.minPrice !== undefined) {
-      results = results.filter(
-        (p) => p.pricePerNight >= filters.minPrice!,
-      );
+      results = results.filter((p) => p.pricePerNight >= filters.minPrice!);
     }
 
     if (filters.maxPrice !== undefined) {
-      results = results.filter(
-        (p) => p.pricePerNight <= filters.maxPrice!,
-      );
+      results = results.filter((p) => p.pricePerNight <= filters.maxPrice!);
     }
 
     if (filters.guests) {
@@ -72,9 +66,7 @@ export class PropertiesService {
     if (filters.amenities && filters.amenities.length > 0) {
       results = results.filter((p) =>
         filters.amenities!.every((a) =>
-          p.amenities.some((pa) =>
-            pa.toLowerCase().includes(a.toLowerCase()),
-          ),
+          p.amenities.some((pa) => pa.toLowerCase().includes(a.toLowerCase())),
         ),
       );
     }
@@ -88,9 +80,7 @@ export class PropertiesService {
         results.sort((a, b) => b.pricePerNight - a.pricePerNight);
         break;
       case 'rating':
-        results.sort(
-          (a, b) => (b.averageRating || 0) - (a.averageRating || 0),
-        );
+        results.sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0));
         break;
       case 'reviews':
         results.sort((a, b) => b.totalReviews - a.totalReviews);
@@ -166,11 +156,7 @@ export class PropertiesService {
     return property;
   }
 
-  update(
-    id: string,
-    hostId: string,
-    dto: Partial<Property>,
-  ): Property {
+  update(id: string, hostId: string, dto: Partial<Property>): Property {
     const index = this.properties.findIndex(
       (p) => p.id === id && p.hostId === hostId,
     );

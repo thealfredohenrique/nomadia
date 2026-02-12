@@ -65,11 +65,7 @@ export class PropertiesController {
 
   @Patch(':id')
   @UseGuards(AuthGuard('jwt'))
-  update(
-    @Param('id') id: string,
-    @Request() req: any,
-    @Body() body: any,
-  ) {
+  update(@Param('id') id: string, @Request() req: any, @Body() body: any) {
     return this.propertiesService.update(id, req.user.sub, body);
   }
 }

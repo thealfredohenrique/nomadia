@@ -43,7 +43,12 @@ describe('AuthController', () => {
         firstName: 'Test',
         lastName: 'User',
       };
-      const expected = { user: { id: '1', email: body.email }, accessToken: 'jwt', refreshToken: 'rt', expiresIn: 900 };
+      const expected = {
+        user: { id: '1', email: body.email },
+        accessToken: 'jwt',
+        refreshToken: 'rt',
+        expiresIn: 900,
+      };
       (authService.register as jest.Mock).mockResolvedValue(expected);
 
       const result = await controller.register(body);
@@ -55,7 +60,12 @@ describe('AuthController', () => {
   describe('login', () => {
     it('should call authService.login with email and password', async () => {
       const body = { email: 'test@example.com', password: 'Pass123!' };
-      const expected = { user: { id: '1' }, accessToken: 'jwt', refreshToken: 'rt', expiresIn: 900 };
+      const expected = {
+        user: { id: '1' },
+        accessToken: 'jwt',
+        refreshToken: 'rt',
+        expiresIn: 900,
+      };
       (authService.login as jest.Mock).mockResolvedValue(expected);
 
       const result = await controller.login(body);
@@ -67,7 +77,11 @@ describe('AuthController', () => {
   describe('refresh', () => {
     it('should call authService.refresh with refreshToken', async () => {
       const body = { refreshToken: 'valid-rt' };
-      const expected = { accessToken: 'new-jwt', refreshToken: 'new-rt', expiresIn: 900 };
+      const expected = {
+        accessToken: 'new-jwt',
+        refreshToken: 'new-rt',
+        expiresIn: 900,
+      };
       (authService.refresh as jest.Mock).mockResolvedValue(expected);
 
       const result = await controller.refresh(body);

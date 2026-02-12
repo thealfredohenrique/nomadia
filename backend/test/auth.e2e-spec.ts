@@ -171,9 +171,7 @@ describe('Auth (e2e)', () => {
     });
 
     it('should return 401 without auth', () => {
-      return request(app.getHttpServer())
-        .get('/v1/auth/me')
-        .expect(401);
+      return request(app.getHttpServer()).get('/v1/auth/me').expect(401);
     });
   });
 });

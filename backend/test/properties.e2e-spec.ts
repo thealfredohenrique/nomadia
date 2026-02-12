@@ -116,8 +116,9 @@ describe('Properties (e2e)', () => {
 
   describe('GET /v1/properties/:id', () => {
     it('should return property with reviews', async () => {
-      const listRes = await request(app.getHttpServer())
-        .get('/v1/properties?limit=1');
+      const listRes = await request(app.getHttpServer()).get(
+        '/v1/properties?limit=1',
+      );
 
       const id = listRes.body.data[0].id;
 
